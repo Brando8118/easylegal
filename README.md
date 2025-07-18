@@ -1,3 +1,3 @@
-# Easy-Legal
+# Legal Management App
 
-Applicazione base per studi legali sviluppata con Next.js e Tailwind CSS.
+Documentazione generale del progetto.
