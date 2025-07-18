@@ -1,0 +1,6 @@
+git init
+git remote add origin https://github.com/TUO_USERNAME/easy-legal.git
+git add .
+git commit -m "Prima versione easy-legal"
+git branch -M main
+git push -u origin main
