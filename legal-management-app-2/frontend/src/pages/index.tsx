@@ -1,0 +1,1 @@
+export default function Home() { return <div style={{ fontFamily: "sans-serif" }}><h1>Benvenuto nell'App dello Studio Legale</h1></div> }
