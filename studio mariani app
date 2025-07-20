@@ -1,0 +1,981 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Home, Users, FileText, AlertTriangle, Calendar, Search, Plus, 
+  Car, Heart, Shield, CheckCircle, Clock, AlertCircle, Upload, 
+  Phone, Video, Menu, X, Settings, Bell, Eye, EyeOff, Camera,
+  ChevronRight, Edit, Save, LogOut, Download, Star, MessageCircle,
+  HelpCircle, CreditCard, Filter
+} from 'lucide-react';
+
+const App = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [selectedPractice, setSelectedPractice] = useState(null);
+  const [showWorkflow, setShowWorkflow] = useState(false);
+  const [showNewPractice, setShowNewPractice] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Mock data
+  const mockPractices = [
+    {
+      id: 1,
+      clientName: "Mario Rossi",
+      practiceNumber: "RC2025001",
+      type: "RC Auto",
+      status: "In corso",
+      progress: 65,
+      priority: "high",
+      nextStep: "Visita medico-legale",
+      completedSteps: 8,
+      totalSteps: 12,
+      alerts: 2,
+      company: "Generali",
+      estimatedValue: "€ 15.000"
+    },
+    {
+      id: 2,
+      clientName: "Anna Verdi",
+      practiceNumber: "INF2025002",
+      type: "Polizza Infortuni",
+      status: "In corso",
+      progress: 45,
+      priority: "medium",
+      nextStep: "Controllo seconda polizza",
+      completedSteps: 4,
+      totalSteps: 9,
+      alerts: 1,
+      company: "Allianz",
+      estimatedValue: "€ 8.500"
+    },
+    {
+      id: 3,
+      clientName: "Giuseppe Bianchi",
+      practiceNumber: "MAL2025003",
+      type: "Malasanità",
+      status: "Critico",
+      progress: 30,
+      priority: "critical",
+      nextStep: "Parere medico esterno",
+      completedSteps: 2,
+      totalSteps: 7,
+      alerts: 3,
+      company: "N/A",
+      estimatedValue: "€ 45.000"
+    }
+  ];
+
+  const workflowSteps = {
+    "RC Auto": [
+      { id: 1, name: "Accesso Pronto Soccorso", required: true, completed: true },
+      { id: 2, name: "Compilazione CID", required: true, completed: true },
+      { id: 3, name: "Denuncia Assicurazione", required: true, completed: true },
+      { id: 4, name: "Prima Visita Ortopedica", required: true, completed: true },
+      { id: 5, name: "Esami Diagnostici", required: true, completed: true },
+      { id: 6, name: "Visita Specialistica", required: false, completed: true },
+      { id: 7, name: "Inizio Terapia", required: true, completed: true },
+      { id: 8, name: "Conclusione Terapia", required: true, completed: true },
+      { id: 9, name: "Visita Medico-Legale", required: true, completed: false },
+      { id: 10, name: "Relazione Medico-Legale", required: true, completed: false },
+      { id: 11, name: "Proposta Risarcitoria", required: true, completed: false },
+      { id: 12, name: "Chiusura Pratica", required: true, completed: false }
+    ]
+  };
+
+  const mockAlerts = [
+    { id: 1, type: "critical", message: "Prescrizione risarcimento tra 15 giorni - Pratica MAL2025003" },
+    { id: 2, type: "high", message: "Step obbligatorio mancante - Controllo seconda polizza" },
+    { id: 3, type: "medium", message: "Documenti mancanti - Relazione medico-legale" }
+  ];
+
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Helper functions
+  const getTypeIcon = (type) => {
+    switch(type) {
+      case "RC Auto": return <Car className="w-5 h-5 text-blue-600" />;
+      case "Polizza Infortuni": return <Shield className="w-5 h-5 text-green-600" />;
+      case "Malasanità": return <Heart className="w-5 h-5 text-red-600" />;
+      default: return <FileText className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const getProgressColor = (progress, priority) => {
+    if (priority === "critical") return "bg-red-500";
+    if (progress < 30) return "bg-red-400";
+    if (progress < 70) return "bg-yellow-400";
+    return "bg-green-500";
+  };
+
+  const getPriorityBadge = (priority) => {
+    const colors = {
+      critical: "bg-red-100 text-red-800",
+      high: "bg-orange-100 text-orange-800",
+      medium: "bg-yellow-100 text-yellow-800",
+      low: "bg-green-100 text-green-800"
+    };
+    return colors[priority] || colors.medium;
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setUploadingFile(true);
+      setTimeout(() => {
+        setUploadingFile(false);
+        alert(`File "${file.name}" caricato con successo!`);
+      }, 1500);
+    }
+  };
+
+  // Loading Screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-32 h-32 mx-auto mb-8">
+            <div className="w-full h-full bg-white rounded-full flex items-center justify-center animate-pulse">
+              <div className="text-blue-900 font-bold text-2xl">MARIANI</div>
+            </div>
+          </div>
+          <div className="w-64 h-2 bg-white/20 rounded-full mx-auto mb-4">
+            <div className="h-2 bg-white rounded-full animate-pulse w-3/4"></div>
+          </div>
+          <p className="text-white/80 text-lg">Caricamento in corso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Login Screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="w-24 h-24 mx-auto mb-4 bg-blue-900 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">MARIANI</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Studio Infortunistica</h1>
+            <p className="text-gray-600">Accedi al tuo studio legale</p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="mario@studiomariani.it"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsAuthenticated(true)}
+              className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium"
+            >
+              Accedi
+            </button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">oppure</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsAuthenticated(true)}
+              className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center justify-center"
+            >
+              <Camera className="w-5 h-5 mr-2" />
+              Accedi con Face ID
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main App
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-blue-900 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 lg:translate-x-0 lg:static`}>
+        <div className="flex items-center justify-between h-16 px-6 bg-blue-800">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-blue-900 font-bold text-xs">M</span>
+            </div>
+            <span className="ml-3 text-white font-semibold">MARIANI</span>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <nav className="mt-8">
+          <div className="px-6 mb-6">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                currentView === 'dashboard' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'
+              }`}
+            >
+              <Home className="w-5 h-5 mr-3" />
+              Dashboard
+            </button>
+          </div>
+
+          {[
+            { key: 'practices', label: 'Pratiche', icon: FileText },
+            { key: 'clients', label: 'Clienti', icon: Users },
+            { key: 'documents', label: 'Documenti', icon: Upload },
+            { key: 'calendar', label: 'Calendario', icon: Calendar }
+          ].map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setCurrentView(item.key)}
+              className={`w-full flex items-center px-10 py-3 text-sm transition-colors ${
+                currentView === item.key ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'
+              }`}
+            >
+              <item.icon className="w-5 h-5 mr-3" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="absolute bottom-0 w-full p-6">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-full flex items-center p-3 bg-blue-800 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm">AL</span>
+            </div>
+            <div className="ml-3 text-left">
+              <p className="text-sm font-medium text-white">Avv. Marco Leone</p>
+              <p className="text-xs text-blue-300">Studio MARIANI</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 text-gray-500 hover:text-gray-700"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900 ml-4 lg:ml-0">
+                {currentView === 'dashboard' && 'Dashboard'}
+                {currentView === 'practices' && 'Gestione Pratiche'}
+                {currentView === 'clients' && 'Gestione Clienti'}
+                {currentView === 'documents' && 'Gestione Documenti'}
+                {currentView === 'calendar' && 'Calendario'}
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <button className="relative p-2 text-gray-400 hover:text-gray-600">
+                <Bell className="w-6 h-6" />
+                <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full"></span>
+              </button>
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
+                <Settings className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {/* Dashboard View */}
+          {currentView === 'dashboard' && (
+            <div className="space-y-6">
+              {/* KPI Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Users className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Clienti Totali</p>
+                      <p className="text-2xl font-bold text-gray-900">{mockPractices.length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <FileText className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Pratiche Attive</p>
+                      <p className="text-2xl font-bold text-gray-900">{mockPractices.filter(p => p.status === "In corso").length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Casi Critici</p>
+                      <p className="text-2xl font-bold text-gray-900">{mockPractices.filter(p => p.priority === "critical").length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-orange-100 rounded-lg">
+                      <Bell className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Alert Urgenti</p>
+                      <p className="text-2xl font-bold text-gray-900">{mockAlerts.filter(a => a.type === "critical" || a.type === "high").length}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Practices */}
+              <div className="bg-white rounded-xl shadow-sm border">
+                <div className="p-6 border-b">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900">Pratiche Recenti</h2>
+                    <button
+                      onClick={() => setShowNewPractice(true)}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuova Pratica
+                    </button>
+                  </div>
+                </div>
+                <div className="divide-y">
+                  {mockPractices.map((practice) => (
+                    <div key={practice.id} className="p-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          {getTypeIcon(practice.type)}
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900">{practice.clientName}</h3>
+                            <p className="text-sm text-gray-500">{practice.practiceNumber} • {practice.type}</p>
+                            <p className="text-xs text-green-600 font-medium">{practice.estimatedValue}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityBadge(practice.priority)}`}>
+                            {practice.priority}
+                          </span>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-900">{practice.progress}%</p>
+                            <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
+                              <div 
+                                className={`h-2 rounded-full ${getProgressColor(practice.progress, practice.priority)}`}
+                                style={{ width: `${practice.progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedPractice(practice);
+                              setShowWorkflow(true);
+                            }}
+                            className="p-2 text-gray-400 hover:text-gray-600"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Alerts */}
+              <div className="bg-white rounded-xl shadow-sm border">
+                <div className="p-6 border-b">
+                  <h2 className="text-lg font-semibold text-gray-900">Alert Recenti</h2>
+                </div>
+                <div className="divide-y">
+                  {mockAlerts.map((alert) => (
+                    <div key={alert.id} className="p-6 flex items-center space-x-4">
+                      <div className={`p-2 rounded-lg ${
+                        alert.type === 'critical' ? 'bg-red-100' : 
+                        alert.type === 'high' ? 'bg-orange-100' : 'bg-yellow-100'
+                      }`}>
+                        <AlertTriangle className={`w-5 h-5 ${
+                          alert.type === 'critical' ? 'text-red-600' : 
+                          alert.type === 'high' ? 'text-orange-600' : 'text-yellow-600'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">{alert.message}</p>
+                      </div>
+                      <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        Risolvi
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Practices View */}
+          {currentView === 'practices' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-gray-600">Tutte le pratiche dello studio</p>
+                <button
+                  onClick={() => setShowNewPractice(true)}
+                  className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Nuova Pratica
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Cerca pratiche, clienti, compagnie..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Practice Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {mockPractices.filter(practice => 
+                  practice.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  practice.practiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  practice.company.toLowerCase().includes(searchTerm.toLowerCase())
+                ).map((practice) => (
+                  <div key={practice.id} className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-shadow">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          {getTypeIcon(practice.type)}
+                          <div>
+                            <h3 className="font-medium text-gray-900">{practice.clientName}</h3>
+                            <p className="text-sm text-gray-500">{practice.practiceNumber}</p>
+                          </div>
+                        </div>
+                        {practice.alerts > 0 && (
+                          <div className="flex items-center space-x-1 bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>{practice.alerts}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Progresso</span>
+                          <span className="font-medium">{practice.progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${getProgressColor(practice.progress, practice.priority)}`}
+                            style={{ width: `${practice.progress}%` }}
+                          ></div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Prossimo step:</span>
+                          <span className="font-medium text-blue-600">{practice.nextStep}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Valore stimato:</span>
+                          <span className="font-medium text-green-600">{practice.estimatedValue}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-3 border-t">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityBadge(practice.priority)}`}>
+                            {practice.priority}
+                          </span>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => alert(`Chiamata a ${practice.clientName}`)}
+                              className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                            >
+                              <Phone className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => alert(`Avvio videocall con ${practice.clientName}`)}
+                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            >
+                              <Video className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedPractice(practice);
+                                setShowWorkflow(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Other Views Placeholder */}
+          {(currentView === 'clients' || currentView === 'documents' || currentView === 'calendar') && (
+            <div className="bg-white rounded-xl shadow-sm border p-12 text-center">
+              <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                {currentView === 'clients' && <Users className="w-12 h-12 text-gray-400" />}
+                {currentView === 'documents' && <FileText className="w-12 h-12 text-gray-400" />}
+                {currentView === 'calendar' && <Calendar className="w-12 h-12 text-gray-400" />}
+              </div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">
+                {currentView === 'clients' && 'Gestione Clienti'}
+                {currentView === 'documents' && 'Gestione Documenti'}
+                {currentView === 'calendar' && 'Calendario'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {currentView === 'documents' && 'Sistema di upload documenti funzionante'}
+                {currentView !== 'documents' && 'Questa sezione sarà disponibile nella versione completa'}
+              </p>
+              {currentView === 'documents' && (
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Upload className="w-5 h-5 mr-2" />
+                  Carica Documento
+                </button>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Workflow Modal */}
+      {showWorkflow && selectedPractice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b bg-blue-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Workflow - {selectedPractice.type}
+                  </h2>
+                  <p className="text-gray-600">{selectedPractice.clientName} • {selectedPractice.practiceNumber}</p>
+                  <p className="text-sm text-green-600 font-medium">{selectedPractice.estimatedValue}</p>
+                </div>
+                <button
+                  onClick={() => setShowWorkflow(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                {workflowSteps[selectedPractice.type]?.map((step, index) => (
+                  <div key={step.id} className={`p-4 border-2 rounded-xl ${
+                    step.completed 
+                      ? 'border-green-200 bg-green-50' 
+                      : step.required 
+                        ? 'border-orange-200 bg-orange-50' 
+                        : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <div className="flex items-center space-x-4">
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                        step.completed ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        {step.completed ? (
+                          <CheckCircle className="w-6 h-6" />
+                        ) : (
+                          <span className="font-bold">{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-1">
+                          <h3 className={`font-medium ${step.completed ? 'text-green-900' : 'text-gray-900'}`}>
+                            {step.name}
+                          </h3>
+                          {step.required && (
+                            <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
+                              Obbligatorio
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg"
+                          title="Carica documento"
+                        >
+                          <Upload className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => alert(`Visualizza documenti per: ${step.name}`)}
+                          className="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg"
+                          title="Visualizza documenti"
+                        >
+                          <FileText className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => alert(`Step "${step.name}" ${step.completed ? 'rimosso' : 'completato'}`)}
+                          className={`p-2 rounded-lg ${
+                            step.completed 
+                              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                              : 'bg-green-100 text-green-600 hover:bg-green-200'
+                          }`}
+                          title={step.completed ? 'Rimuovi completamento' : 'Marca come completato'}
+                        >
+                          {step.completed ? <X className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Progresso Pratica</h4>
+                    <p className="text-sm text-gray-600">{selectedPractice.completedSteps} di {selectedPractice.totalSteps} step completati</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-blue-600">
+                      {selectedPractice.progress}%
+                    </p>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+                  <div 
+                    className={`h-4 rounded-full ${getProgressColor(selectedPractice.progress, selectedPractice.priority)}`}
+                    style={{ width: `${selectedPractice.progress}%` }}
+                  ></div>
+                </div>
+                <div className="flex space-x-3">
+                  <button 
+                    onClick={() => alert('Workflow aggiornato con successo!')}
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  >
+                    Salva Modifiche
+                  </button>
+                  <button 
+                    onClick={() => alert(`Invio notifica a ${selectedPractice.clientName}`)}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  >
+                    Notifica Cliente
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Practice Modal */}
+      {showNewPractice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full">
+            <div className="p-6 border-b bg-blue-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Nuova Pratica</h2>
+                <button
+                  onClick={() => setShowNewPractice(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nome Cliente</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  placeholder="Es. Mario Rossi"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo di Sinistro</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {['RC Auto', 'Polizza Infortuni', 'Malasanità'].map((type) => (
+                    <button
+                      key={type}
+                      className="flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    >
+                      {getTypeIcon(type)}
+                      <span className="ml-3 font-medium">{type}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Compagnia Assicurativa</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  placeholder="Es. Generali, Allianz..."
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowNewPractice(false)}
+                  className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  Annulla
+                </button>
+                <button 
+                  onClick={() => {
+                    alert('Nuova pratica creata con successo!');
+                    setShowNewPractice(false);
+                  }}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  Crea Pratica
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b bg-blue-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Impostazioni</h2>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Profilo */}
+              <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Profilo Utente</h3>
+                  <button
+                    onClick={() => alert('Modifica profilo attivata')}
+                    className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                    <p className="text-gray-900">Avv. Marco Leone</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <p className="text-gray-900">marco.leone@studiomariani.it</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                    <p className="text-gray-900">+39 02 1234567</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Studio</label>
+                    <p className="text-gray-900">Studio Infortunistica MARIANI</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assistenza */}
+              <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Centro Assistenza</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => alert('Apertura chat assistenza...')}
+                    className="w-full flex items-center p-3 bg-white rounded-lg hover:bg-green-100 transition-colors text-left"
+                  >
+                    <MessageCircle className="w-5 h-5 text-green-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">Chat Live</p>
+                      <p className="text-sm text-gray-600">Assistenza immediata disponibile 24/7</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => alert('Apertura FAQ...')}
+                    className="w-full flex items-center p-3 bg-white rounded-lg hover:bg-green-100 transition-colors text-left"
+                  >
+                    <HelpCircle className="w-5 h-5 text-green-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">FAQ</p>
+                      <p className="text-sm text-gray-600">Domande frequenti e guide</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => alert('Richiesta supporto tecnico inviata!')}
+                    className="w-full flex items-center p-3 bg-white rounded-lg hover:bg-green-100 transition-colors text-left"
+                  >
+                    <Settings className="w-5 h-5 text-green-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">Supporto Tecnico</p>
+                      <p className="text-sm text-gray-600">Richiedi assistenza specializzata</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Abbonamento */}
+              <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Gestione Abbonamento</h3>
+                <div className="bg-white rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900">Piano Corrente</span>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                      Professional
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">Scadenza: 15 Gennaio 2026</p>
+                  <p className="text-sm text-gray-600">€ 99/mese • Fino a 10 utenti</p>
+                </div>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => alert('Apertura pagina upgrade...')}
+                    className="w-full flex items-center p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    <Star className="w-5 h-5 mr-3" />
+                    <div className="text-left">
+                      <p className="font-medium">Upgrade a Enterprise</p>
+                      <p className="text-sm opacity-90">Utenti illimitati, AI avanzata, supporto prioritario</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => alert('Apertura gestione fatturazione...')}
+                    className="w-full flex items-center p-3 bg-white rounded-lg hover:bg-purple-100 transition-colors text-left"
+                  >
+                    <CreditCard className="w-5 h-5 text-purple-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">Fatturazione</p>
+                      <p className="text-sm text-gray-600">Gestisci metodi di pagamento e fatture</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Logout */}
+              <div className="pt-4 border-t">
+                <button 
+                  onClick={() => {
+                    setIsAuthenticated(false);
+                    setShowSettings(false);
+                  }}
+                  className="w-full flex items-center justify-center p-3 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 font-medium"
+                >
+                  <LogOut className="w-5 h-5 mr-2" />
+                  Esci dall'applicazione
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Loading */}
+      {uploadingFile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 text-center">
+            <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-900 font-medium">Caricamento documento in corso...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileUpload}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
+        multiple
+      />
+    </div>
+  );
+};
+
+export default App;
